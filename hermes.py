@@ -1,41 +1,37 @@
 import discord
 from discord.ext import commands, tasks
 
+from datetime import datetime
 from dotenv import load_dotenv
 import os
-import math
 
 
 load_dotenv('.env')
 client = commands.Bot(command_prefix = '/')
+dt = datetime.now().strftime('%m/%d/%Y - %H:%M:%S')
 
-class Messenger(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-        self._last_member = None
-    
-    @commands.command()
-    async def hello(self, ctx,*args, member: discord.Member=None):
-        member = member or ctx.author
-        if self._last_member is None or self._last_member.id != member.id:
-            await ctx.send('Hello, {0.name}'.format(member))
-        else:
-            await ctx.send('Hello, {0.name}. Nice to see you.'.format(member))
-        self._last_member = member
 
+@client.event
+async def on_connect():
+    print('~~~~~~~~~~~~')
+    print(f'[{dt}] Logged in as {client.user.name} (ID: {client.user.id})')
+
+@client.event
+async def on_resume():
+    print(f'[{dt}] Reconnected!')
 
 @client.event
 async def on_ready():
     try:
         print('Discord.py Version: {}'.format(discord.__version__))
         print(f'{client.user.name} is ready.')
+        client.load_extension('cogs.messenger')
+        client.load_extension('cogs.translate')
     except Exception as e:
         print(e)
         
+@client.event
+async def on_disconnect():
+   print(f'[{dt}] Reconnected!')
 
-@client.command()
-async def ping(message):
-    await message.send(f'Latency: {math.trunc(client.latency * 1000)}ms')
-
-client.add_cog(Messenger(client))
 client.run(os.getenv('TOKEN'))
